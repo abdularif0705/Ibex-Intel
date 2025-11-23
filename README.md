@@ -1,8 +1,8 @@
 # Ibex Intel - AI-Powered Enterprise Transformation Radar
 
-<img src="https://github.com/abdularif0705/Ibex-Intel/blob/main/public/ibex-favicon.png" alt="Ibex logo" width="110" />
+<img src="https://github.com/abdularif0705/Ibex-Intel/blob/main/public/ibex-favicon.png" alt="Ibex logo" width="220" />
 
-## Inspiration
+## ✨ Inspiration
 
 Our founder's experience implementing enterprise SAAS at Fortune 500 companies revealed a critical information arbitrage opportunity—((when Target's $7B ERP implementation crashed in 2013, or when Nike's SAP delays caused a -47% stock drop)), the early warning signs were there months before. _We built Ibex Intel to detect these signals before they hit earnings calls._
 
@@ -16,18 +16,19 @@ _Timeline & Traction_
 
 ---
 
-## What it does
+## 🚀 What it does
 
 _Ibex Intel is a real-time intelligence radar for enterprise transformations._
 
-### Core Functionality
+### 🧠 Core Functionality
 
 1. _Live Web Scraping Engine_ - Continuously monitors job postings (LinkedIn, Indeed), SEC filings, press releases, and consulting firm announcements to detect ERP/CRM/HCM transformation signals across Fortune 500 companies, public sector entities, and private companies.
 
 2. _Multi-Stage AI Analysis:_
 
-   - _Grok API_ - xAI's Grok-4-1 with real-time web search across 100+ sources for strategic analysis and forecasting
-   - _TF-IDF + Scikit-Learn NLP_ - Production system uses TfidfVectorizer with cosine similarity for signal detection. We initially tried sentence-transformers (BERT embeddings), but the model alone was 420MB—too large for Render's 512MB containers, causing OOM errors. TF-IDF uses <5MB RAM and achieves 65-70% precision while remaining lightweight and fast.
+   - _Grok API_ - xAI's Grok-4-1 with real-time web search across 100+ sources (also acts as an alternative path when scraping + NLP filtering is rate-limited)
+   - _Local Vector Semantic Search_ - Uses locally-hosted embeddings to classify signals by transition phase (RFP / ongoing / completed) with higher precision
+   - _TF-IDF Vectoring (Optimized)_ - We initially tried ANN-based vector models, but they consumed too much memory on Render’s free/starter tiers and deployments failed. Switching to TF-IDF preserved 60-70% accuracy—significantly better than pure keyword filters—while staying lightweight.
    - _Two-Phase Verification_ - Architectural constraints minimize hallucinations (Phase 1: force web search, Phase 2: constrain to evidence)
    - _Bayesian Confidence Scoring_ - Statistical validation with z-scores and confidence intervals
    - _Phase Classification_ - Identifies RFP/Planning, Active Implementation, or Post-Go-Live stages
@@ -132,9 +133,9 @@ _Impact:_
 
 ---
 
-## How we built it
+## 🛠️ How we built it
 
-### Architecture Overview
+### 🗺️ Architecture Overview
 
 ```
 ┌─────────────────────────────────────┐
@@ -164,7 +165,7 @@ _Impact:_
 └──────────┘  └────────────────┘  └─────────┘  └──────────┘
 ```
 
-### Tech Stack
+### 💻 Tech Stack
 
 _Frontend:_ React 18, TypeScript, Vite, TailwindCSS, shadcn/ui,
 
@@ -172,7 +173,7 @@ _Backend:_ Supabase PostgreSQL (12 tables, 28 migrations), Deno Edge Functions (
 
 _Scraping:_ Python + curl_cffi (TLS spoofing), Docker, Render.com hosting
 
-_AI/ML:_ Grok API (two-phase verification), Python NLP Engine (scikit-learn TF-IDF with 200+ signal library), TypeScript Signal Analyzer (824 lines, Bayesian scoring + statistical validation)
+_AI/ML:_ Grok API (two-phase verification), TypeScript Signal Analyzer (824 lines, NLP + TF-IDF + Bayesian scoring)
 
 _Key Features:_
 
@@ -183,7 +184,7 @@ _Key Features:_
 
 ---
 
-## Challenges we ran into
+## ⚠️ Challenges we ran into
 
 ### 1. _LinkedIn's TLS Fingerprinting_
 
@@ -254,7 +255,7 @@ result = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
 ---
 
-## Accomplishments that we're proud of
+## 🎯 Accomplishments that we're proud of
 
 ### Technical Innovations
 
@@ -283,7 +284,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 
 ---
 
-## What we learned
+## 📚 What we learned
 
 ### Technical Insights
 
@@ -301,9 +302,9 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 
 ---
 
-## What's next for Ibex Intel
+## 🔮 What's next for Ibex Intel
 
-### Short Term (Next 30 Days)
+### ⏱️ Short Term (Next 30 Days)
 
 - _Close first paying customers_ - 3 hedge fund analysts already expressing strong interest
 - Launch beta with 10 clients
@@ -313,7 +314,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 - Improved accuracy
 - Build scheduled jobs + notification layer so users can pin companies and receive fresh signals automatically
 
-### Medium Term (3-6 Months)
+### 🧭 Medium Term (3-6 Months)
 
 - Stripe payment integration
 - Automated scheduled scans + email reports
@@ -323,7 +324,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 - Target 20 paid subscribers ($10K MRR)
 - Explore advanced embedding search again once we can provision higher-memory infrastructure
 
-### Long Term (6-12 Months)
+### 🏔️ Long Term (6-12 Months)
 
 - _Target 100 paid subscribers_ ($50K MRR)
 - Pursue distribution partnership
@@ -335,9 +336,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 
 ---
 
-## Technology Stack Summary
-
-### ACTIVELY USED IN PRODUCTION
+## 🧾 Technology Stack Summary
 
 _Frontend:_ React 18, TypeScript, Vite, TailwindCSS, shadcn/ui, React Query
 
@@ -345,14 +344,9 @@ _Backend:_ Supabase PostgreSQL (12 tables, 28 migrations, RLS), Deno Edge Functi
 
 _Scraping:_ curl_cffi (Python, TLS spoofing), Render.com, Docker with health checks
 
-_AI/ML:_ Grok API (xAI, two-phase verification), Python NLP (scikit-learn TF-IDF), TypeScript Signal Analyzer (824 lines)
+_AI/ML:_ Grok API (xAI, two-phase verification to minimize hallucinations), TypeScript Signal Analyzer (824 lines)
 
 _Infrastructure:_ Supabase (Auth + Functions), Render.com (Python service)
-
-### ⚠ CONFIGURED BUT INACTIVE
-
-- Google Custom Search API (configured but not called)
-- sentence-transformers (commented out for speed)
 
 ---
 
