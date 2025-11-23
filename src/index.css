@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 204 37% 27%;
+    --foreground: 210 40% 98%;
+
+    --card: 204 35% 22%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 204 37% 27%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 200 75% 55%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 204 35% 35%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 204 30% 40%;
+    --muted-foreground: 210 20% 75%;
+
+    --accent: 195 80% 60%;
+    --accent-foreground: 204 37% 27%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 204 30% 35%;
+    --input: 204 30% 35%;
+    --ring: 200 75% 55%;
+
+    --radius: 0.5rem;
+
+    /* Mountain-themed gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(204 37% 27%) 0%, hsl(204 35% 22%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(200 75% 55%) 0%, hsl(195 80% 60%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(204 37% 27%) 0%, hsl(204 30% 18%) 100%);
+    --gradient-mountain: linear-gradient(180deg, hsl(204 40% 20%) 0%, hsl(204 37% 27%) 50%, hsl(204 35% 30%) 100%);
+
+    /* Shadows with mountain depth */
+    --shadow-premium: 0 20px 40px -10px hsl(204 40% 10% / 0.6);
+    --shadow-glow: 0 0 40px hsl(200 75% 55% / 0.3);
+    --shadow-mountain: 0 10px 50px -5px hsl(204 40% 5% / 0.8);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

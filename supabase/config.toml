@@ -1,0 +1,19 @@
+project_id = "frvqifynajcsmveqklmd"
+
+[functions.scrape-source]
+verify_jwt = true
+
+[functions.send-report]
+verify_jwt = true
+
+[functions.generate-report]
+verify_jwt = true
+
+[functions.verify-company]
+verify_jwt = true
+
+[functions.chat]
+verify_jwt = true
+
+[functions.intelligent-scan]
+verify_jwt = true

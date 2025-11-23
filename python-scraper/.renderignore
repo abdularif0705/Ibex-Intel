@@ -1,0 +1,17 @@
+# Files to ignore during Render deployment
+*.md
+!requirements.txt
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.vscode/
+.idea/
+docker-compose.yml
+Dockerfile
+*.log
+.env
+.env.local
+
