@@ -1,6 +1,6 @@
-# Ibex Intel - AI-Powered Enterprise Transformation Radar
+# Ibex Intel - AI-Powered Enterprise Transformation Radar 🐐
 
-## Inspiration
+## ✨ Inspiration
 
 Our founder's experience implementing enterprise SAAS at Fortune 500 companies revealed a critical information arbitrage opportunity—((when Target's $7B ERP implementation crashed in 2013, or when Nike's SAP delays caused a -47% stock drop)), the early warning signs were there months before. _We built Ibex Intel to detect these signals before they hit earnings calls._
 
@@ -14,11 +14,11 @@ _Timeline & Traction_
 
 ---
 
-## What it does
+## 🚀 What it does
 
 _Ibex Intel is a real-time intelligence radar for enterprise transformations._
 
-### Core Functionality
+### 🧠 Core Functionality
 
 1. _Live Web Scraping Engine_ - Continuously monitors job postings (LinkedIn, Indeed), SEC filings, press releases, and consulting firm announcements to detect ERP/CRM/HCM transformation signals across Fortune 500 companies, public sector entities, and private companies.
 
@@ -131,9 +131,9 @@ _Impact:_
 
 ---
 
-## How we built it
+## 🛠️ How we built it
 
-### Architecture Overview
+### 🗺️ Architecture Overview
 
 ```
 ┌─────────────────────────────────────┐
@@ -163,7 +163,7 @@ _Impact:_
 └──────────┘  └────────────────┘  └─────────┘  └──────────┘
 ```
 
-### Tech Stack
+### 💻 Tech Stack
 
 _Frontend:_ React 18, TypeScript, Vite, TailwindCSS, shadcn/ui,
 
@@ -182,7 +182,7 @@ _Key Features:_
 
 ---
 
-## Challenges we ran into
+## ⚠️ Challenges we ran into
 
 ### 1. _LinkedIn's TLS Fingerprinting_
 
@@ -253,7 +253,7 @@ result = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
 ---
 
-## Accomplishments that we're proud of
+## 🎯 Accomplishments that we're proud of
 
 ### Technical Innovations
 
@@ -282,7 +282,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 
 ---
 
-## What we learned
+## 📚 What we learned
 
 ### Technical Insights
 
@@ -300,9 +300,9 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 
 ---
 
-## What's next for Ibex Intel
+## 🔮 What's next for Ibex Intel
 
-### Short Term (Next 30 Days)
+### ⏱️ Short Term (Next 30 Days)
 
 - _Close first paying customers_ - 3 hedge fund analysts already expressing strong interest
 - Launch beta with 10 clients
@@ -312,7 +312,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 - Improved accuracy
 - Build scheduled jobs + notification layer so users can pin companies and receive fresh signals automatically
 
-### Medium Term (3-6 Months)
+### 🧭 Medium Term (3-6 Months)
 
 - Stripe payment integration
 - Automated scheduled scans + email reports
@@ -322,7 +322,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 - Target 20 paid subscribers ($10K MRR)
 - Explore advanced embedding search again once we can provision higher-memory infrastructure
 
-### Long Term (6-12 Months)
+### 🏔️ Long Term (6-12 Months)
 
 - _Target 100 paid subscribers_ ($50K MRR)
 - Pursue distribution partnership
@@ -334,9 +334,7 @@ _Cross-Referencing SEC Edgar data + Job Postings:_
 
 ---
 
-## Technology Stack Summary
-
-### ACTIVELY USED IN PRODUCTION
+## 🧾 Technology Stack Summary
 
 _Frontend:_ React 18, TypeScript, Vite, TailwindCSS, shadcn/ui, React Query
 
@@ -347,8 +345,3 @@ _Scraping:_ curl_cffi (Python, TLS spoofing), Render.com, Docker with health che
 _AI/ML:_ Grok API (xAI, two-phase verification to minimize hallucinations), TypeScript Signal Analyzer (824 lines)
 
 _Infrastructure:_ Supabase (Auth + Functions), Render.com (Python service)
-
-### ⚠ CONFIGURED BUT INACTIVE
-
-- Google Custom Search API (configured but not called)
-- sentence-transformers (commented out for speed)
