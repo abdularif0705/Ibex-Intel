@@ -1,4 +1,6 @@
-# Ibex Intel - AI-Powered Enterprise Transformation Radar 🐐
+# Ibex Intel - AI-Powered Enterprise Transformation Radar
+
+<img src="https://github.com/abdularif0705/Ibex-Intel/blob/main/public/ibex-favicon.png" alt="Ibex logo" width="220" />
 
 ## ✨ Inspiration
 
