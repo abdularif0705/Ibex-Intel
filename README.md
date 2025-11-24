@@ -18,12 +18,10 @@ Search any company → We analyze **100+ sources in minutes**:
 
 **Why analysts pay us:** They currently pay $200K/year salaries to do this manually. We do it in minutes.
 
----
 ## Demo
 
 [![Demo video](https://img.youtube.com/vi/KGUQN11kNiQ/0.jpg)](https://www.youtube.com/watch?v=KGUQN11kNiQ)
 
----
 ## 🔍 Real Example: Nike Transformation Analysis
 
 **Input:** Search "Nike"
@@ -98,7 +96,6 @@ A hedge fund analyst doing this manually would need:
 
 **We do it in 3 minutes.**
 
----
 
 ## 🧠 What Makes This Hard (Our Moat)
 
@@ -209,7 +206,6 @@ We track historical accuracy for each source and weight new signals accordingly.
 
 PostgreSQL triggers auto-set cache expiration (24h for Grok, 7 days for SEC filings). Hash indexes provide O(1) lookups. Cache hit tracking measures ROI. Saves ~70% on API costs at scale.
 
----
 
 ## 🏆 Why Financial Analysts Will Pay for This
 
@@ -394,7 +390,6 @@ PostgreSQL triggers auto-set expiration. Hash indexes for O(1) lookups. ~70% cac
 | **AI Integration** | Grok API (two-phase architecture) |
 | **Early Users** | 3 hedge fund analysts interested in beta |
 
----
 
 ## 🔮 What's Next
 
@@ -426,15 +421,12 @@ PostgreSQL triggers auto-set expiration. Hash indexes for O(1) lookups. ~70% cac
 
 **The Plan:** Build with customers, not for hypothetical scale. Let real usage guide what we build next.
 
----
 
 ## 🏔️ Why "Ibex"?
 
 Mountain goats navigate extreme altitudes with precision and see terrain others can't from ground level.
 
 We give financial analysts that **40,000-foot view** of enterprise transformations—detecting risks and opportunities invisible from ground level.
-
----
 
 ## 🚀 Try It
 
@@ -444,7 +436,6 @@ Built by a team with deep enterprise implementation experience (1 year implement
 
 **We're not just building a tool—we're building a moat.**
 
----
 
 ## 📖 Additional Documentation
 
