@@ -124,7 +124,11 @@ const step2 = await fetch(grokApiUrl, {
 
 **TF-IDF (Term Frequency-Inverse Document Frequency):**
 
-Statistical weighting that scores terms by importance—high frequency in document but rare across corpus = high score.
+A statistical technique that identifies important words in a document by scoring them based on:
+- How often they appear in the document (Term Frequency)
+- How rare they are across all documents (Inverse Document Frequency)
+
+If "cutover" appears frequently in one job posting but rarely across thousands of job postings, it gets a high score—signaling it's domain-specific and important.
 
 **The Math:**
 
@@ -213,7 +217,11 @@ Spending $1,560/year before validating product-market fit would be premature. We
 
 **Bayesian Updating with Source Reliability:**
 
-Weight new evidence by historical source accuracy.
+Different data sources have different historical accuracy rates. Bayesian updating weights new evidence by the source's track record—signals from reliable sources get higher confidence scores.
+
+For example, if LinkedIn has been 70% accurate historically and Reddit 30%, the same signal ("SAP implementation at Nike") gets different confidence scores:
+- LinkedIn source: 81% confidence
+- Reddit source: 69% confidence
 
 **Implementation:**
 
@@ -236,9 +244,9 @@ linkedin_posterior = bayesian_update(0.70, 0.85, 0.7)  # = 0.805 (81%)
 reddit_posterior = bayesian_update(0.30, 0.85, 0.7)    # = 0.685 (69%)
 ```
 
-Same signal, different confidence based on source track record.
-
 **Advanced: Multi-Armed Bandit (UCB1)**
+
+The multi-armed bandit algorithm balances exploration (trying new/underused sources) with exploitation (using historically reliable sources). It gives an "exploration bonus" to sources we haven't sampled much, ensuring we don't ignore potentially good sources.
 
 ```python
 def calculate_exploration_bonus(source_sample_count, total_samples):
@@ -253,7 +261,7 @@ for source in sources:
     scores[source] = source.accuracy + calculate_exploration_bonus(source.samples, total)
 ```
 
-Automatically adapts to source quality changes over time.
+This ensures the system adapts to source quality changes over time.
 
 ---
 
@@ -298,7 +306,9 @@ if (confidence < 0.60) flag_as_low_confidence();
 
 **The Challenge:**
 
-LinkedIn uses JA3 fingerprinting to detect bots at the TLS handshake layer. Standard Python libraries (requests, urllib3) use OpenSSL configurations that produce different cipher suite orderings and extension lists than real browsers.
+LinkedIn uses JA3 fingerprinting to detect bots at the TLS handshake layer. When a client connects via HTTPS, it sends a ClientHello packet containing its TLS version, cipher suites (in order), and extensions. This creates a unique fingerprint—like a browser's "signature."
+
+Standard Python libraries (requests, urllib3) use OpenSSL configurations that produce different cipher suite orderings than real browsers, making them detectable.
 
 **JA3 Hash Comparison:**
 
@@ -310,7 +320,7 @@ Python Requests (OpenSSL):
 771,49200-49196-49192-49188-49172-49162-159-107-57-52393-52392-52394-65413-196-136-129-157-61-53-132-141-49199-49195-49191-49187-49171-49161-158-103-51-190-69-156-60-47-150-65-7,11-10-35-22-23-13,29-23-25-24,0-1-2
 ```
 
-Obviously different. User-Agent headers are irrelevant since fingerprinting happens at ClientHello (before HTTP).
+The cipher suite order is different—LinkedIn's servers detect this and block non-browser traffic. User-Agent headers don't help since fingerprinting happens at the encryption layer (before HTTP headers are sent).
 
 **Our Solution: curl_cffi**
 
