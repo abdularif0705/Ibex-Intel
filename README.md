@@ -19,7 +19,7 @@ Search any company → We analyze **100+ sources in minutes**:
 **Why analysts pay us:** They currently pay $200K/year salaries to do this manually. We do it in minutes.
 
 ---
-## Demo (YouTube)
+## Demo
 
 [![Demo video](https://img.youtube.com/vi/KGUQN11kNiQ/0.jpg)](https://www.youtube.com/watch?v=KGUQN11kNiQ)
 
