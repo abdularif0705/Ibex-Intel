@@ -8,9 +8,9 @@
 
 When Target's $7B ERP crashed in 2013 or Nike's SAP delays caused a -47% stock drop, the warning signs were there months earlier. We detect them by analyzing:
 
-- Job postings (LinkedIn, Indeed) - "Cutover Manager" → Go-live in 90-120 days
-- SEC filings (10-Q, 10-K) - "$150M SAP implementation" disclosed
-- Consultant hiring patterns - Multiple "Hypercare Lead" roles → Post-launch crisis
+- **Job postings** (LinkedIn, Indeed, company career pages) - "Cutover Manager" → Go-live in 90-120 days
+- **SEC filings** (10-K, 10-Q, 8-K via Edgar API) - "$150M SAP implementation" disclosed
+- **Real-time web signals** (news, blogs, case studies, earnings transcripts, financial analysis) - Grok searches 100+ sources including CNBC, Forbes, Seeking Alpha, company blogs, consulting case studies
 
 **Every signal links to a verifiable source URL.** No AI hallucinations. 3 hedge fund analysts ready to pay $500/month.
 
@@ -76,23 +76,35 @@ Our founder's enterprise implementation experience powers a proprietary signal d
 | "Selective data transition" | Partial migration (high risk) | 80% | Implementation underway |
 
 **Real Example:**
-- Company posts "SAP Cutover Manager" on LinkedIn (detected)
-- SEC 10-Q discloses "$150M SAP implementation" (cross-referenced)
+- Grok searches 115+ sources for Nike transformation signals
+- Finds: LinkedIn "SAP Consultant" jobs, SEC 10-Q disclosure "$150M SAP implementation," Workday case study, CNBC news article, consulting firm reports
+- SEC Edgar API confirms financial commitment in official filings
 - **System flags:** "Go-Live Imminent (90-120 days)" with 95% confidence
 
 **This taxonomy doesn't exist anywhere else.** It's built from first-principles domain knowledge spanning 500+ real transformation projects.
 
 ---
 
-### 3. Production Web Scraping Infrastructure
+### 3. Multi-Source Intelligence Pipeline
 
 Built real-time monitoring across 100+ sources:
+
+**Direct Scraping (Python + curl_cffi):**
 - LinkedIn, Indeed, Glassdoor (job postings)
-- SEC EDGAR API (financial filings)  
-- Press releases, consulting firm announcements
 - Company career pages
 
-**Technical Approach:** Python microservice with curl_cffi for TLS fingerprinting, deployed on Render with Docker + health checks.
+**API Integrations:**
+- SEC Edgar API (10-K, 10-Q, 8-K filings)
+
+**Grok Real-Time Web Search:**
+- News: CNBC, Forbes, Barrons, Business of Fashion
+- Financial analysis: Seeking Alpha, Motley Fool, earnings transcripts
+- Industry blogs: consulting case studies, ERP implementation stories
+- Company announcements: press releases, investor relations
+
+**Example from real Nike search:** 115 sources researched including LinkedIn jobs, SEC filings, Workday case studies, YouTube videos, consulting firm reports, and financial news.
+
+**Technical Approach:** Python microservice with curl_cffi for TLS fingerprinting (deployed on Render with Docker), Edgar API integration, Grok API with forced web search.
 
 ---
 
@@ -164,7 +176,8 @@ Built real-time monitoring across 100+ sources:
 - Pre-built transformer model ready for v2 (already tested at 85%+)
 
 **3. Production Scraping Infrastructure**
-- Built custom Python service to handle TLS fingerprinting
+- Built custom Python service to handle TLS fingerprinting for job boards
+- Edgar API integration for official SEC filings
 - Deployed with Docker, health checks, auto-restart
 - 99% success rate with LinkedIn job postings
 
