@@ -237,7 +237,7 @@ PostgreSQL triggers auto-set cache expiration (24h for Grok, 7 days for SEC fili
 - **Saves 148.5 hours/month**
 
 **Better Intelligence:**
-- We find signals they miss (115 sources vs. their 10-20 manual searches)
+- We find signals they miss (100+ sources vs. their 10-20 manual searches)
 - Cross-reference automatically (they can't check 5 sources for every signal)
 - Historical pattern matching (we know which patterns indicate failure)
 
