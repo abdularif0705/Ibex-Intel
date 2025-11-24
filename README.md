@@ -430,7 +430,7 @@ We give financial analysts that **40,000-foot view** of enterprise transformatio
 
 ## 🚀 Try It
 
-**Live demo:** [ibex-intel.com](https://ibex-intel.com)
+**Live demo:** [ibex-intel.com](https://signalstream-cvig.onrender.com)
 
 Built by a team with deep enterprise implementation experience (1 year implementing SAP/Workday at Fortune 500s) and a passion for solving information arbitrage problems in financial markets.
 
