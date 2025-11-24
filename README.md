@@ -274,3 +274,14 @@ Live demo: [ibex-intel.com](https://ibex-intel.com)
 Built by a team with deep enterprise implementation experience and a passion for solving real information arbitrage problems in financial markets.
 
 **We're not just building a tool—we're building a moat.**
+
+---
+
+## 📖 Additional Documentation
+
+**For Engineers & Technical Deep Dives:**
+- [TECHNICAL_FAQ.md](./TECHNICAL_FAQ.md) - Architecture details, ML roadmap, implementation specifics
+
+**For Business Context:**
+- [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) - Product vision and strategy
+- [TRANSFORMATION_SIGNALS_TAXONOMY.md](./TRANSFORMATION_SIGNALS_TAXONOMY.md) - Signal classification system
