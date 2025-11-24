@@ -300,14 +300,14 @@ User searches: "Nike"
      ↓
 ┌────────────────────────────────────────────┐
 │ Parallel Data Collection                   │
-│                                             │
+│                                            │
 │ ┌─ Direct Scraping (Python + curl_cffi)    │
 │ │  └─ LinkedIn, Indeed, Glassdoor          │
 │ │     (TLS fingerprinting)                 │
-│ │                                           │
+│ │                                          │
 │ ├─ API Integration                         │
 │ │  └─ SEC Edgar (10-K, 10-Q, 8-K)          │
-│ │                                           │
+│ │                                          │
 │ └─ AI Web Search (Grok)                    │
 │    └─ 100+ sources: news, blogs,           │
 │       case studies, earnings, video        │
