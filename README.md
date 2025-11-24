@@ -6,7 +6,7 @@
 
 **When Target's $7B ERP crashed (2013) or Nike's SAP delays tanked their stock 15%, the warning signs were there 6 months earlier. We detect them.**
 
-Search "Nike" → We analyze **115 sources in 3 minutes**:
+Search any company → We analyze **100+ sources in minutes**:
 - Job boards (LinkedIn, Indeed, Glassdoor)
 - SEC filings (10-K, 10-Q, 8-K)
 - Financial news (CNBC, Forbes, Seeking Alpha)
@@ -295,7 +295,7 @@ User searches: "Nike"
 │ - Public company? → Query SEC Edgar        │
 │ - Find LinkedIn company page               │
 │ - Identify relevant job boards             │
-│ - Plan 115 sources to analyze              │
+│ - Plan sources to analyze (varies by co.)  │
 └────────────────────────────────────────────┘
      ↓
 ┌────────────────────────────────────────────┐
