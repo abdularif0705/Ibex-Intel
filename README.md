@@ -12,7 +12,7 @@ When Target's $7B ERP crashed in 2013 or Nike's SAP delays caused a -47% stock d
 - **SEC filings** (10-K, 10-Q, 8-K via Edgar API) - "$150M SAP implementation" disclosed
 - **Real-time web signals** (news, blogs, case studies, earnings transcripts, financial analysis) - Grok searches 100+ sources including CNBC, Forbes, Seeking Alpha, company blogs, consulting case studies
 
-**Every signal links to a verifiable source URL.** No AI hallucinations. 3 hedge fund analysts ready to pay $500/month.
+**Every signal links to a verifiable source URL.** No AI hallucinations. 3 analysts interested in beta.
 
 ---
 
@@ -24,7 +24,7 @@ Our founder spent a year implementing SAP and Workday at Fortune 500 companies. 
 
 _Why "Ibex"?_ Mountain goats navigate extreme altitudes with precision. We give customers that 40,000-foot view others can't see.
 
-**Built in 2 weeks. Production-ready. 3 paying customers lined up.**
+**Built in 2 weeks. Production-ready. Learning from early users.**
 
 ---
 
@@ -52,6 +52,8 @@ Database-level caching with triggers auto-sets expiration (24h for Grok, 7 days 
 - **Graceful degradation** returns partial results instead of failing completely
 
 Result: 97% success rate, 40% less API waste, 99.7% uptime over 14 days.
+
+**Note on metrics:** Some technical metrics (cache hit rates, accuracy scores) are from initial testing and will be validated/refined with production usage.
 
 ---
 
@@ -217,17 +219,14 @@ Built real-time monitoring across 100+ sources:
 
 ## 💼 Customer Validation
 
-**3 hedge fund analysts ready to pay $500/month** once beta opens.
+**3 hedge fund analysts interested in trying the beta.**
 
 **What they told us:**
-- "We're already doing this manually—paying $200K/year analysts to scan job boards"
-- "Your tool would save us 20 hours/week"  
+- "We're already doing this manually—paying analysts to scan job boards"
+- "This would save significant research time"  
 - **"#1 requirement: verifiable evidence, no hallucinations"** ← Why we built two-phase Grok
 
-**Market Opportunity:**
-- 10,000+ hedge funds globally
-- 50,000+ financial analysts
-- Early signals worth 10x more than RFP announcements (per customers)
+We're focused on learning from these early users rather than projecting revenue.
 
 ---
 
@@ -235,34 +234,50 @@ Built real-time monitoring across 100+ sources:
 
 | Metric | Value |
 |--------|-------|
-| **Accuracy** | 82% precision, 65% recall |
-| **Cache Hit Rate** | 70% (API cost savings) |
-| **Uptime** | 99.7% over 14 days |
-| **Database** | 28 migrations, 12 tables |
-| **Signal Analyzer** | 824 lines (TypeScript) |
-| **Edge Functions** | 10 endpoints (Deno) |
 | **Build Time** | 2 weeks |
-| **Paying Customers** | 3 lined up at $500/mo |
+| **Database** | 28 migrations, 12 tables |
+| **Edge Functions** | 10 endpoints (Deno) |
+| **Signal Analyzer** | 824 lines (TypeScript) |
+| **Interested Analysts** | 3 ready to try beta |
+| **Tech Stack** | React, Supabase, Grok API, Python |
 
 ---
 
 ## 🔮 What's Next
 
-**Short Term (30 Days):**
-- Close 3 lined-up analysts, launch beta with 10 clients
-- Build scheduled scans + email alerts (pin companies, get notified)
-- Expand sources: G2 reviews, Gartner ratings, integrator track records
+### Immediate Focus
 
-**Medium Term (3-6 Months):**
-- Stripe integration, automated email reports
-- **Switch to pre-built transformer model** (85%+ accuracy, already tested)
-- Historical database: 10,000+ transformation projects (2010-2025)
-- Target: 20 paid subscribers ($10K MRR)
+**Learn from early users:**
+- Working with 3 hedge fund analysts to validate the product
+- Understanding which signals matter most, which are noise
+- Iterating based on real feedback, not assumptions
 
-**Long Term (6-12 Months):**
-- Custom DeBERTa fine-tuned on proprietary dataset (90-95% accuracy target)
-- Human-in-the-loop verification for top-tier subscribers
-- 100 paid subscribers ($50K MRR)
+**Improve the core:**
+- Better signal classification (job-specific keywords, context analysis)
+- Reduce false positives through user feedback loops
+- Add more data sources where users tell us it's valuable
+
+**Make it useful:**
+- Scheduled scans + notifications (pin companies, get alerts)
+- Exportable reports
+- Historical tracking of predictions vs. outcomes
+
+### Future Direction (User-Driven)
+
+Once we validate product-market fit with early customers:
+
+**Machine Learning Path:**
+- We have sentence-transformers already built (85%+ in testing)
+- Deploy when traffic justifies the cost (~$50-130/month)
+- Eventually: fine-tune on real user corrections to learn domain-specific patterns
+- Active learning: users tell us when we're wrong, model gets smarter
+
+**More Data Sources:**
+- G2/Gartner reviews (if users want vendor risk analysis)
+- Consulting firm track records (if users want implementation risk scoring)
+- International coverage (Europe, Asia) based on demand
+
+**The Plan:** Build with customers, not for hypothetical users. Let actual usage guide what we build next.
 
 ---
 
