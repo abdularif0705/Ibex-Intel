@@ -16,7 +16,7 @@ Search any company → We analyze **100+ sources in minutes**:
 
 **Result:** "Go-live in 90-120 days, 85% confidence" with every claim linked to a verifiable source URL.
 
-**Why analysts pay us:** They currently pay $200K/year salaries to do this manually. We do it in minutes.
+**Why financial analysts pay us:** They currently pay $200K/year salaries to do this manually. We do it in minutes.
 
 ## Demo
 
