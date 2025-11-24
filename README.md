@@ -290,38 +290,53 @@ PostgreSQL triggers auto-set cache expiration (24h for Grok, 7 days for SEC fili
 ```
 User searches: "Nike"
      ↓
-Intelligent Search Strategy:
-  - Public company? → Query SEC Edgar
-  - Find LinkedIn company page
-  - Identify relevant job boards
-  - Plan 115 sources to analyze
+┌────────────────────────────────────────────┐
+│ Intelligent Search Strategy                │
+│ - Public company? → Query SEC Edgar        │
+│ - Find LinkedIn company page               │
+│ - Identify relevant job boards             │
+│ - Plan 115 sources to analyze              │
+└────────────────────────────────────────────┘
      ↓
-Parallel Data Collection:
-  ├─ Direct Scraping (Python + curl_cffi)
-  │  └─ LinkedIn, Indeed, Glassdoor (TLS fingerprinting)
-  ├─ API Integration
-  │  └─ SEC Edgar (10-K, 10-Q, 8-K)
-  └─ AI Web Search (Grok)
-     └─ 100+ sources: news, blogs, case studies, 
-        earnings, social, video
+┌────────────────────────────────────────────┐
+│ Parallel Data Collection                   │
+│                                             │
+│ ┌─ Direct Scraping (Python + curl_cffi)    │
+│ │  └─ LinkedIn, Indeed, Glassdoor          │
+│ │     (TLS fingerprinting)                 │
+│ │                                           │
+│ ├─ API Integration                         │
+│ │  └─ SEC Edgar (10-K, 10-Q, 8-K)          │
+│ │                                           │
+│ └─ AI Web Search (Grok)                    │
+│    └─ 100+ sources: news, blogs,           │
+│       case studies, earnings, video        │
+└────────────────────────────────────────────┘
      ↓
-Signal Analysis (824-line TypeScript analyzer):
-  - TF-IDF + Bayesian confidence scoring
-  - Domain-specific keyword detection
-  - Phase classification (RFP → Go-live)
-  - Vendor identification (SAP, Workday...)
+┌────────────────────────────────────────────┐
+│ Signal Analysis Engine                     │
+│ - 824-line TypeScript analyzer             │
+│ - TF-IDF + Bayesian confidence scoring     │
+│ - Domain-specific keyword detection        │
+│ - Phase classification (RFP → Go-live)     │
+│ - Vendor identification (SAP, Workday...)  │
+└────────────────────────────────────────────┘
      ↓
-Cross-Reference & Validation:
-  - Match signals across sources
-  - Calculate triangulation confidence
-  - Weight by source historical accuracy
-  - Flag contradictions
+┌────────────────────────────────────────────┐
+│ Cross-Reference & Validation               │
+│ - Match signals across sources             │
+│ - Calculate triangulation confidence       │
+│ - Weight by source historical accuracy     │
+│ - Flag contradictions                      │
+└────────────────────────────────────────────┘
      ↓
-Generate Intelligence Report:
-  - Phase: Late-stage (cutover)
-  - Confidence: 95% (5 confirmations)
-  - Timeline: Go-live in 90-120 days
-  - Evidence: Links to all source URLs
+┌────────────────────────────────────────────┐
+│ Generate Intelligence Report               │
+│ - Phase: Late-stage (cutover)              │
+│ - Confidence: 95% (5 confirmations)        │
+│ - Timeline: Go-live in 90-120 days         │
+│ - Evidence: Links to all source URLs       │
+└────────────────────────────────────────────┘
 ```
 
 ### Implementation Details
