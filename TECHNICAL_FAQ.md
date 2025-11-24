@@ -124,25 +124,22 @@ const step2 = await fetch(grokApiUrl, {
 
 **TF-IDF (Term Frequency-Inverse Document Frequency):**
 
-Think of it as a smart highlighter. If a word appears frequently in one document but rarely across all documents, it's probably important.
+Statistical weighting that scores terms by importance—high frequency in document but rare across corpus = high score.
 
 **The Math:**
 
 ```
-TF-IDF = Term Frequency × Inverse Document Frequency
+TF-IDF = TF(term, doc) × IDF(term)
 
-TF(term, doc) = (occurrences of term in doc) / (total words in doc)
-IDF(term) = log(total documents / documents containing term)
+TF(term, doc) = count(term in doc) / total_words(doc)
+IDF(term) = log(total_docs / docs_containing_term)
 
 Example:
-- "consultant" appears in 70% of tech jobs
-  TF = 0.02, IDF = log(10000/7000) = 0.36 → TF-IDF = 0.007
+"consultant" in 70% of job postings: IDF = log(10000/7000) = 0.36
+"cutover" in 2% of job postings: IDF = log(10000/200) = 3.91
 
-- "cutover" appears in 2% of tech jobs  
-  TF = 0.005, IDF = log(10000/200) = 3.91 → TF-IDF = 0.019
+Same TF, but "cutover" scores 10x higher due to rarity.
 ```
-
-**Result:** "Cutover" scores 2.7× higher despite appearing less frequently in the document!
 
 **Why TF-IDF Beats Keyword Matching:**
 
@@ -214,123 +211,83 @@ Spending $1,560/year before validating product-market fit would be premature. We
 
 ### Q: How does Bayesian confidence scoring work?
 
-**Simple Analogy:**
+**Bayesian Updating with Source Reliability:**
 
-Imagine two friends giving stock tips:
-- Friend A: Right 80% historically
-- Friend B: Right 30% historically
+Weight new evidence by historical source accuracy.
 
-Both say "Buy Tesla!" Who do you trust more? Friend A.
-
-Our system does the same with data sources.
-
-**The Formula:**
+**Implementation:**
 
 ```python
 def bayesian_update(prior_confidence, new_evidence_confidence, weight=0.7):
     """
-    Bayesian updating with weighted evidence
-    
     Args:
-        prior_confidence: Historical success rate of source (0-1)
-        new_evidence_confidence: Confidence from current signal (0-1)  
-        weight: How much to trust new evidence vs. history (0-1)
-    
-    Returns:
-        posterior_confidence: Updated confidence (0-1)
+        prior_confidence: Historical accuracy of source (0-1)
+        new_evidence_confidence: Current signal strength (0-1)  
+        weight: Trust in new evidence vs. prior (0-1)
     """
-    posterior = (weight * new_evidence_confidence) + ((1 - weight) * prior_confidence)
-    return posterior
+    return (weight * new_evidence_confidence) + ((1 - weight) * prior_confidence)
 
 # Example:
-linkedin_prior = 0.70  # LinkedIn signals are historically 70% accurate
-reddit_prior = 0.30    # Reddit signals are historically 30% accurate
+linkedin_prior = 0.70    # 70% historical accuracy
+reddit_prior = 0.30      # 30% historical accuracy
+signal_strength = 0.85   # Both sources report same signal
 
-signal_strength = 0.85  # Current signal looks 85% confident
-
-linkedin_posterior = bayesian_update(0.70, 0.85, 0.7)
-# = 0.7 * 0.85 + 0.3 * 0.70 = 0.595 + 0.210 = 0.805 (81% confidence)
-
-reddit_posterior = bayesian_update(0.30, 0.85, 0.7)  
-# = 0.7 * 0.85 + 0.3 * 0.30 = 0.595 + 0.090 = 0.685 (69% confidence)
+linkedin_posterior = bayesian_update(0.70, 0.85, 0.7)  # = 0.805 (81%)
+reddit_posterior = bayesian_update(0.30, 0.85, 0.7)    # = 0.685 (69%)
 ```
 
-**Same signal strength (0.85), different confidence based on source reliability.**
+Same signal, different confidence based on source track record.
 
-**Advanced: Multi-Armed Bandit for Source Selection**
+**Advanced: Multi-Armed Bandit (UCB1)**
 
 ```python
 def calculate_exploration_bonus(source_sample_count, total_samples):
-    """
-    UCB1 (Upper Confidence Bound) algorithm
-    Balances exploitation (use best sources) with exploration (try undersampled sources)
-    """
+    """UCB1 algorithm - balances exploitation vs. exploration"""
     if source_sample_count == 0:
-        return float('inf')  # Always explore unseen sources
+        return float('inf')  # Always try unseen sources
     
-    exploration_term = math.sqrt(2 * math.log(total_samples) / source_sample_count)
-    return exploration_term
+    return math.sqrt(2 * math.log(total_samples) / source_sample_count)
 
-# Select source with highest: (historical_accuracy + exploration_bonus)
-scores = {}
+# Select source: max(historical_accuracy + exploration_bonus)
 for source in sources:
-    exploitation = source.historical_accuracy
-    exploration = calculate_exploration_bonus(source.sample_count, total_samples)
-    scores[source] = exploitation + exploration
-
-best_source = max(scores, key=scores.get)
+    scores[source] = source.accuracy + calculate_exploration_bonus(source.samples, total)
 ```
 
-**Why This Matters:**
-
-- **Cold start problem:** New sources (e.g., Glassdoor) get explored even if we don't have historical data
-- **Adapts over time:** If LinkedIn quality degrades, the system automatically shifts to other sources
-- **Statistical rigor:** Not arbitrary thresholds—principled decision theory
+Automatically adapts to source quality changes over time.
 
 ---
 
 ### Q: What's the accuracy? How do you measure it?
 
-**Current Metrics (TF-IDF + Bayesian + Grok):**
+**Metrics (TF-IDF + Bayesian + Grok):**
 
-| Metric | Value | Definition |
-|--------|-------|------------|
-| **Precision** | 82% | Of flagged signals, 82% are real transformations |
-| **Recall** | 65% | Of real transformations, we catch 65% |
-| **F1 Score** | 0.72 | Harmonic mean of precision/recall |
-| **Correlation with ground truth** | 0.74 | Pearson correlation with manual analyst labels |
-| **False positive rate** | 18% | 18% of flagged signals are noise |
-| **Cache hit rate** | 70% | 70% of queries use cached data (cost savings) |
+| Metric | Value |
+|--------|-------|
+| Precision | 82% |
+| Recall | 65% |
+| F1 Score | 0.72 |
+| Correlation (Pearson) | 0.74 |
+| False Positive Rate | 18% |
 
-**Where False Positives Come From:**
+**False Positive Sources:**
+1. Staffing firms posting generic roles (not client-specific)
+2. Long-term maintenance roles (not transformation projects)
+3. Stale postings
 
-1. **Staffing firms** posting generic "SAP consultant" roles (not client-specific)
-2. **Long-term roles** (not urgent project needs)
-3. **Old job postings** not removed by companies
-
-**How We Reduce False Positives:**
+**Mitigation:**
 
 ```typescript
-// Temporal clustering - multiple signals within 90 days
-if (signals.length >= 3 && max_time_span < 90_days) {
-  confidence *= 1.3;  // Boost confidence
-}
+// Temporal clustering
+if (signals.length >= 3 && max_time_span < 90_days) confidence *= 1.3;
 
 // Urgency keywords
-const high_urgency = ["cutover", "go-live", "hypercare", "mock"];
-if (high_urgency.some(kw => signal.includes(kw))) {
-  confidence *= 1.5;
-}
+if (["cutover", "go-live", "hypercare"].some(kw => signal.includes(kw))) confidence *= 1.5;
 
-// Source reliability
-if (source === "LinkedIn" && source_historical_accuracy > 0.70) {
-  confidence *= 1.2;
-}
+// Source reliability + Bayesian priors
+if (source === "LinkedIn" && source_accuracy > 0.70) confidence *= 1.2;
 
-// Bayesian confidence intervals
-if (confidence < 0.60) {
-  flagged_as_low_confidence = true;
-}
+// Threshold
+if (confidence < 0.60) flag_as_low_confidence();
 ```
 
 ---
@@ -341,61 +298,29 @@ if (confidence < 0.60) {
 
 **The Challenge:**
 
-LinkedIn uses **TLS/JA3 fingerprinting** to detect bots at the encryption layer—before HTTP requests are even sent.
+LinkedIn uses JA3 fingerprinting to detect bots at the TLS handshake layer. Standard Python libraries (requests, urllib3) use OpenSSL configurations that produce different cipher suite orderings and extension lists than real browsers.
 
-**What is TLS Fingerprinting?**
-
-When your browser connects to a server via HTTPS, it sends a `ClientHello` packet that includes:
+**JA3 Hash Comparison:**
 
 ```
-ClientHello Packet:
-├── TLS version (e.g., TLS 1.3)
-├── Cipher suites (encryption algorithms, in specific order)
-├── Extensions (SNI, ALPN, supported groups, etc.)
-├── Compression methods
-└── Elliptic curves
-```
-
-The **JA3 hash** is a fingerprint of this packet:
-
-```
-JA3 = MD5(TLS_version, Ciphers, Extensions, EllipticCurves, EllipticCurveFormats)
-
-Example Chrome 120 JA3:
+Chrome 120:
 771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513,29-23-24,0
 
-Example Python Requests JA3:
+Python Requests (OpenSSL):
 771,49200-49196-49192-49188-49172-49162-159-107-57-52393-52392-52394-65413-196-136-129-157-61-53-132-141-49199-49195-49191-49187-49171-49161-158-103-51-190-69-156-60-47-150-65-7,11-10-35-22-23-13,29-23-25-24,0-1-2
 ```
 
-**Notice they're different!** LinkedIn sees the Python requests fingerprint and blocks it immediately.
-
-**Why Changing User-Agent Headers Doesn't Work:**
-
-```python
-# ❌ This doesn't work
-headers = {'User-Agent': 'Mozilla/5.0 Chrome/120.0'}
-response = requests.get(url, headers=headers)
-# Still blocked! TLS fingerprint happens BEFORE headers are sent
-```
-
-TLS fingerprinting occurs at the **encryption layer** (Layer 4/5 of OSI model), before the HTTP request (Layer 7) is sent.
+Obviously different. User-Agent headers are irrelevant since fingerprinting happens at ClientHello (before HTTP).
 
 **Our Solution: curl_cffi**
 
 ```python
 from curl_cffi import requests
 
-# ✅ This works - mimics Chrome 120's exact TLS handshake
 response = requests.get(url, impersonate='chrome120')
 ```
 
-**Why curl_cffi Works:**
-
-- Uses **BoringSSL** (Google's fork of OpenSSL) instead of standard OpenSSL
-- Replicates Chrome's exact cipher suite order
-- Matches Chrome's TLS extensions (ALPN, supported groups, etc.)
-- Produces **bit-for-bit identical JA3 hash** to real Chrome 120
+Uses BoringSSL (Google's OpenSSL fork) to replicate Chrome 120's exact TLS handshake—matching cipher suite order, extensions (ALPN, supported groups), and elliptic curves. Produces bit-for-bit identical JA3 hash.
 
 **Implementation:**
 
@@ -439,7 +364,7 @@ def scrape_linkedin_jobs(company_name, keywords):
 
 **Legal Note:**
 
-We only scrape **publicly accessible data** (no login required). The hiQ Labs vs. LinkedIn (9th Circuit, 2019) precedent establishes that scraping public data doesn't violate CFAA.
+Public data only (no authentication bypass). hiQ Labs v. LinkedIn (9th Circuit, 2019) precedent.
 
 ---
 
@@ -1154,48 +1079,30 @@ Fine-tuning teaches the model these insider terms.
 
 ### Q: Why not use GPT-4 for everything?
 
-**We could, but:**
-
-**1. Cost at Scale:**
+**Cost & Speed Trade-offs:**
 
 ```
 Current (TF-IDF + Grok):
-- 10,000 queries/month
-- $0.015/query (Grok)
-- 70% cache hit = 3,000 API calls
-- Cost: $45/month
+- 10K queries/month, 70% cache hit = 3K API calls
+- $0.015/query → $45/month
 
-If we used GPT-4 for classification:
-- 10,000 queries/month  
-- $0.03-0.06/query (GPT-4)
-- Cost: $300-600/month (before caching)
-```
+GPT-4 Classification:
+- 10K queries/month
+- $0.03-0.06/query → $300-600/month
 
-**2. Speed:**
-
-```
+Speed:
 TF-IDF:              <50ms
-Sentence-Transformers: 100-200ms
-Fine-tuned BERT:     150-300ms
-GPT-4 API:           2,000-5,000ms
+Sentence-Transformers: 150ms
+Fine-tuned BERT:     250ms
+GPT-4 API:           2-5s
 ```
 
-**3. Control:**
+**Control & Privacy:**
+- Fine-tuned model = owned infrastructure (can't be shut down)
+- Data never leaves your servers (enterprise requirement)
+- API pricing/behavior can change
 
-- Fine-tuned model is YOURS (can't be shut down)
-- GPT-4 API can change behavior/pricing
-- Open-source models = full control
-
-**4. Privacy:**
-
-- Fine-tuned model runs on YOUR infrastructure
-- Data never leaves your servers
-- Important for enterprise customers
-
-**Best of Both Worlds:**
-
-- Use Grok (similar to GPT-4) for **broad web search** (its strength)
-- Use fine-tuned BERT for **domain-specific classification** (your strength)
+**Strategy:** Use Grok for broad web search (its strength), fine-tuned BERT for domain classification (your strength).
 
 ---
 
