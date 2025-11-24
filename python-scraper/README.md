@@ -1,6 +1,6 @@
-# Python Scraper Service with curl_cffi
+# Python Scraper & NLP Service
 
-This service provides advanced web scraping capabilities using `curl_cffi`, which bypasses anti-bot detection by spoofing TLS/JA3 fingerprints to mimic real browsers.
+This Flask microservice pairs `curl_cffi` (for TLS/JA3 spoofing) with our NLP signal stack (scikit-learn TF-IDF + optional PyTorch `sentence-transformers`) so we can both fetch and score evidence before it hits Supabase.
 
 ## Features
 
@@ -8,6 +8,7 @@ This service provides advanced web scraping capabilities using `curl_cffi`, whic
 - **TLS Fingerprint Spoofing**: Bypasses Cloudflare, Akamai, and other anti-bot systems
 - **JA3/JA4 Fingerprint Matching**: Matches real browser fingerprints
 - **Simple REST API**: Easy integration with your Supabase Edge Functions
+- **NLP Signal Detection**: Runs TF-IDF + cosine scoring by default and can flip on a PyTorch MiniLM embedding model for premium scans
 
 ## Quick Start
 
@@ -163,27 +164,22 @@ Health check endpoint.
 
 ## Similarity Analysis & Signal Detection
 
-This service uses **Vector Search (NLP)** via `sentence-transformers` instead of traditional TF-IDF or keyword matching.
+The Flask service exposes two complementary analyzers:
 
-### Why Vector Search?
+1. **`similarity.py` (default path)** – scikit-learn TF-IDF + cosine similarity, 824-signal taxonomy, <512 MB memory footprint, feeds `StageClassifier`.
+2. **`similarity_vector.py` (optional path)** – PyTorch `sentence-transformers/all-MiniLM-L6-v2` embeddings with vector cosine scoring for semantic recall.
 
-1.  **Semantic Understanding**:
-    - Traditional keyword matching (TF-IDF) looks for exact overlaps. It fails if a job post says "AI" but your list only has "Artificial Intelligence".
-    - Vector search (using `all-MiniLM-L6-v2`) maps text to a 384-dimensional semantic space. It understands that "cutover" and "go-live" are semantically related to "implementation completion".
+### Why keep both?
 
-2.  **Context Awareness**:
-    - The system employs a **Context Layer** that first checks for core ERP/HCM keywords (e.g., "SAP", "Workday", "Oracle").
-    - Signals like "Project Manager" are ignored unless they appear in the context of a relevant system, reducing false positives.
+- **Determinism + speed**: TF-IDF path is cheap to run on every request (works on small Railway dynos) and provides exact-match guarantees analysts can audit.
+- **Semantic recall**: The PyTorch MiniLM encoder understands that “cutover weekend” ≈ “go-live rehearsal”, so it recovers signals that never share exact tokens.
+- **Context gating**: Both detectors reuse the same ERP keyword filter to avoid false positives like “Project Manager” without “SAP/Workday” context.
 
-3.  **Robustness**:
-    - It handles variations in phrasing, typos, and synonyms much better than rigid regex or keyword lists.
-    - It can detect the *intent* or *stage* of a project (e.g., "urgent hire" + "6 month contract" = Late Stage) by combining multiple weak signals into a strong one.
+### Enabling the PyTorch vector path (plan)
 
-### Why NOT TF-IDF?
-
--   **Brittle for Short Text**: TF-IDF relies on term frequency across a corpus. For short texts like job titles or snippets, it lacks sufficient statistical data to be effective.
--   **No Semantic Meaning**: TF-IDF treats "manager" and "lead" as completely different words. Vector search knows they are similar roles.
--   **Hard to Tune**: Tuning TF-IDF thresholds for "high confidence" signals is difficult. Vector cosine similarity provides a normalized 0-1 score that is easier to calibrate for "high confidence" (e.g., >0.85).
+1. Uncomment `sentence-transformers` in `requirements.txt` (pulls PyTorch) and redeploy.
+2. In `python-scraper/main.py`, uncomment the import + `/api/v1/detect-signals-vector` route; optionally guard with an env flag like `USE_VECTOR_PIPELINE=1`.
+3. Point premium workloads to `/api/v1/detect-signals-vector` or flip the default analyzer once budgets allow—no frontend changes required.
 
 ## Cost Estimates
 

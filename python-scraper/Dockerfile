@@ -6,11 +6,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
+# Copy application files
 COPY main.py .
+COPY similarity.py .
+COPY similarity_vector.py .
 
-# Expose port
-EXPOSE 8080
+# Render provides $PORT automatically
+EXPOSE 0
 
-# Run with gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "--timeout", "120", "main:app"]
+# Use $PORT at runtime (Render injects it)
+CMD ["bash", "-c", "gunicorn main:app --bind 0.0.0.0:${PORT} --workers 1 --threads 1 --timeout 120"]
