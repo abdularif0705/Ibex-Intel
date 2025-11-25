@@ -25,6 +25,36 @@ export const GrokSearchDashboard = () => {
   const [loadingStep, setLoadingStep] = useState<string>("");
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showAllSources, setShowAllSources] = useState(false);
+  const [currentSearchId, setCurrentSearchId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get user ID and check for active searches on mount
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+
+        // Check for any running tasks
+        const { data: runningTasks } = await supabase
+          .from('grok_search_results')
+          .select('id, created_at, company_name')
+          .eq('user_id', user.id)
+          .eq('status', 'running')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (runningTasks && runningTasks.length > 0) {
+          console.log("Found active search:", runningTasks);
+          setCurrentSearchId(runningTasks[0].id);
+          setCompanyName(runningTasks[0].company_name);
+          setLoadingStep("Resuming AI scan...");
+          setLoadingProgress(45); // Resume at middle
+        }
+      }
+    };
+    init();
+  }, []);
 
   // Fetch search history
   const { data: history, isLoading: isLoadingHistory } = useQuery({
@@ -35,7 +65,7 @@ export const GrokSearchDashboard = () => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       if (error) throw error;
       return data;
     },
@@ -56,15 +86,14 @@ export const GrokSearchDashboard = () => {
       return data;
     },
     onSuccess: (data) => {
-      setLoadingProgress(100);
       if (data.success) {
-        setCurrentResult(data.data);
-        setShowAllSources(false);
+        setCurrentSearchId(data.id);
+        setLoadingStep("Initializing AI scan...");
+        setLoadingProgress(5);
         toast({
-          title: "Analysis Complete",
-          description: "AI strategic analysis has been generated.",
+          title: "Scan Started",
+          description: data.message || "AI analysis is running in the background.",
         });
-        queryClient.invalidateQueries({ queryKey: ['grok_search_history'] });
         setCompanyName("");
       } else {
         toast({
@@ -83,39 +112,112 @@ export const GrokSearchDashboard = () => {
     },
   });
 
-  // Simulate loading steps
+  // Real-time subscription for async updates (User Level)
   useEffect(() => {
-    if (!searchMutation.isPending) {
-      setLoadingProgress(0);
-      setLoadingStep("");
+    if (!userId) return;
+
+    console.log("Subscribing to updates for user:", userId);
+    const channel = supabase
+      .channel(`grok-user-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'grok_search_results',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const newStatus = payload.new.status;
+          const updatedId = payload.new.id;
+
+          // Only react if it matches our current tracked search OR if we want to auto-switch
+          // For now, let's just track the one we are watching, or any if we are idle
+          if (currentSearchId && updatedId !== currentSearchId) return;
+
+          if (newStatus === 'completed') {
+            // Fetch full result to ensure we have all fields (payload might be partial)
+            supabase
+              .from('grok_search_results')
+              .select('*')
+              .eq('id', updatedId)
+              .single()
+              .then(({ data, error }) => {
+                if (!error && data) {
+                  setCurrentResult({
+                    companyName: data.company_name,
+                    phase: data.phase,
+                    signalType: data.signal_type,
+                    confidence: data.confidence,
+                    shareImpact: data.share_impact,
+                    pastImpacts: data.past_impacts,
+                    futureImpacts: data.future_impacts,
+                    summary: data.summary,
+                    evidence: data.evidence,
+                    sources: data.sources,
+                    allSources: data.all_sources
+                  });
+                  // setCurrentResult(data);
+                  setLoadingProgress(100);
+                  setCurrentSearchId(null);
+                  toast({
+                    title: "Analysis Complete",
+                    description: `Strategic insights for ${data.company_name} are ready.`,
+                  });
+                }
+              });
+          } else if (newStatus === 'failed') {
+            setLoadingProgress(0);
+            setCurrentSearchId(null);
+            toast({
+              title: "Analysis Failed",
+              description: payload.new.summary || "An error occurred during analysis.",
+              variant: "destructive",
+            });
+          }
+
+          queryClient.invalidateQueries({ queryKey: ['grok_search_history'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, currentSearchId, queryClient, toast]);
+
+  // Simulate loading steps (visual only, real status comes from DB)
+  useEffect(() => {
+    if (!currentSearchId) {
+      if (!searchMutation.isPending) {
+        // Only reset if we are truly done (no active search ID)
+        // We keep the progress bar full if we just finished
+      }
       return;
     }
 
     const steps = [
-      { msg: "Searching live web sources...", progress: 10 },
-      { msg: "Analyzing job postings & RFPs...", progress: 75 },
-      { msg: "Cross-referencing financial data...", progress: 80 },
+      { msg: "Searching live web sources...", progress: 15 },
+      { msg: "Analyzing job postings & RFPs...", progress: 45 },
+      { msg: "Cross-referencing financial data...", progress: 70 },
       { msg: "Generating strategic insights...", progress: 90 }
     ];
 
-    // Initial step
-    setLoadingStep(steps[0].msg);
-    setLoadingProgress(steps[0].progress);
+    let currentStepIndex = 0;
 
-    let currentStepIndex = 1;
-    
     const interval = setInterval(() => {
       if (currentStepIndex < steps.length) {
         setLoadingStep(steps[currentStepIndex].msg);
         setLoadingProgress(steps[currentStepIndex].progress);
         currentStepIndex++;
       } else {
+        // Stay at 90% until real completion
         clearInterval(interval);
       }
-    }, 6500);
+    }, 60000); // Slower updates for long running task
 
     return () => clearInterval(interval);
-  }, [searchMutation.isPending]);
+  }, [currentSearchId, searchMutation.isPending]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,18 +246,18 @@ export const GrokSearchDashboard = () => {
           <Sparkles className="w-5 h-5 text-primary" />
           <h2 className="text-xl font-semibold">AI Strategic Search</h2>
         </div>
-        
+
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="flex gap-4">
             <Input
               placeholder="Enter company name (e.g. Nike, Tesla)..."
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              disabled={searchMutation.isPending}
+              disabled={searchMutation.isPending || !!currentSearchId}
               className="flex-1"
             />
-            <Button type="submit" disabled={searchMutation.isPending || !companyName.trim()}>
-              {searchMutation.isPending ? (
+            <Button type="submit" disabled={searchMutation.isPending || !!currentSearchId || !companyName.trim()}>
+              {searchMutation.isPending || currentSearchId ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Scanning...
@@ -169,7 +271,7 @@ export const GrokSearchDashboard = () => {
             </Button>
           </div>
 
-          {searchMutation.isPending && (
+          {(searchMutation.isPending || currentSearchId) && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span className="flex items-center gap-2">
@@ -181,6 +283,9 @@ export const GrokSearchDashboard = () => {
                 <span>{loadingProgress}%</span>
               </div>
               <Progress value={loadingProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                This deep scan may take up to 3-5 minutes. You can leave this page; results will appear in history.
+              </p>
             </div>
           )}
         </form>
@@ -229,7 +334,7 @@ export const GrokSearchDashboard = () => {
                     <p className="text-sm text-muted-foreground">No future forecasts available.</p>
                   )}
                 </div>
-                
+
                 <h4 className="font-semibold flex items-center gap-2 mb-2 text-lg text-amber-600 mt-5">
                   <History className="w-5 h-5" /> Past Financial Impacts
                 </h4>
@@ -313,7 +418,7 @@ export const GrokSearchDashboard = () => {
                           {showAllSources ? "Hide" : "View All"}
                         </Button>
                       </div>
-                      
+
                       {showAllSources && (
                         <div className="grid gap-2 animate-in fade-in slide-in-from-top-2 max-h-60 overflow-y-auto pr-2">
                           {currentResult.allSources.map((source: any, i: number) => (
@@ -377,28 +482,37 @@ export const GrokSearchDashboard = () => {
                     {new Date(item.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => {
-                        setCurrentResult({
-                          companyName: item.company_name,
-                          phase: item.phase,
-                          signalType: item.signal_type,
-                          confidence: item.confidence,
-                          shareImpact: item.share_impact,
-                          pastImpacts: item.past_impacts,
-                          futureImpacts: item.future_impacts,
-                          summary: item.summary,
-                          evidence: item.evidence,
-                          sources: item.sources,
-                          allSources: item.all_sources || []
-                        });
-                        setShowAllSources(false);
-                      }}
-                    >
-                      View
-                    </Button>
+                    {
+                      item.status === "running" && ("Still Scanning")
+                    }
+                    {
+                      item.status === "failed" && ("Failed")
+                    }
+                    {
+                      item.status === "completed" &&
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCurrentResult({
+                            companyName: item.company_name,
+                            phase: item.phase,
+                            signalType: item.signal_type,
+                            confidence: item.confidence,
+                            shareImpact: item.share_impact,
+                            pastImpacts: item.past_impacts,
+                            futureImpacts: item.future_impacts,
+                            summary: item.summary,
+                            evidence: item.evidence,
+                            sources: item.sources,
+                            allSources: item.all_sources
+                          });
+                          setShowAllSources(false);
+                        }}
+                      >
+                        View
+                      </Button>}
                   </TableCell>
                 </TableRow>
               ))}

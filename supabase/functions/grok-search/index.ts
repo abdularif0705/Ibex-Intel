@@ -22,12 +22,16 @@ interface StrategicInsight {
   companyName: string;
 }
 
-interface GrokSearchResponse {
-  success: boolean;
-  data: StrategicInsight;
-  fromCache: boolean;
-  error?: string;
-}
+addEventListener('unhandledrejection', (ev) => {
+  console.log('unhandledrejection', ev.reason)
+  ev.preventDefault()
+})
+
+// Use beforeunload event handler to be notified when function is about to shutdown
+addEventListener('beforeunload', (ev) => {
+  console.log('Function will be shutdown due to', ev)
+  // Save state or log the current progress
+})
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -44,36 +48,66 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
-    const { companyName, useCache = true } = await req.json();
+    const { companyName, useCache = false } = await req.json();
     if (!companyName) throw new Error('companyName is required');
 
-    console.log(`[Grok Search] Starting analysis for: ${companyName}`);
+    console.log(`[Grok Search] Request received for: ${companyName}`);
 
-    // Cache check
-    if (useCache) {
-      const cached = await getCachedSearch(`strategic_analysis_${companyName}`, supabase);
-      if (cached) {
-        return new Response(JSON.stringify({ success: true, data: cached.results, fromCache: true }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
+    // 1. Create initial record
+    const { data: initialRecord, error: insertError } = await supabase
+      .from('grok_search_results')
+      .insert({
+        user_id: user.id,
+        company_name: companyName,
+        status: 'running',
+        phase: 'Unknown', // Default values
+        signal_type: 'Other',
+        confidence: 0,
+        share_impact: 'Unknown',
+        summary: 'Analysis in progress...'
+      })
+      .select()
+      .single();
 
-    const grokApiKey = Deno.env.get('GROK_API_KEY');
-    const grokApiUrl = Deno.env.get('GROK_API_URL') || 'https://api.x.ai/v1/chat/completions';
-    if (!grokApiKey) throw new Error('GROK_API_KEY missing');
+    if (insertError) throw insertError;
 
-    // ========================================
-    // STEP 1: Pure fact gathering — NO HALLUCINATION POSSIBLE
-    // ========================================
-    const step1Response = await fetch("https://api.x.ai/v1/responses", {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${grokApiKey}` },
-      body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',
-        input: [{
-          role: 'user',
-          content: `Search the web RIGHT NOW using as many queries as needed for "${companyName}" and find ANY verifiable public signals of enterprise transformation (ERP, CRM, HCM, PLM, SCM, cloud migration, legacy system replacement) in the last 24 months.
+    // 2. Define background task
+    const backgroundTask = async () => {
+      try {
+        console.log(`[Grok Search] Starting background analysis for: ${companyName}`);
+
+        // Cache check (if enabled)
+        if (useCache) {
+          const cached = await getCachedSearch(`strategic_analysis_${companyName}`, supabase);
+          if (cached) {
+            console.log('[Grok Search] Cache hit, updating record');
+            await supabase
+              .from('grok_search_results')
+              .update({
+                ...cached.results, // Spread cached results (phase, signal_type, etc.)
+                status: 'completed',
+                all_sources: cached.results.allSources // Ensure this maps correctly if cache structure differs
+              })
+              .eq('id', initialRecord.id);
+            return;
+          }
+        }
+
+        const grokApiKey = Deno.env.get('GROK_API_KEY');
+        const grokApiUrl = Deno.env.get('GROK_API_URL') || 'https://api.x.ai/v1/chat/completions';
+        if (!grokApiKey) throw new Error('GROK_API_KEY missing');
+
+        // ========================================
+        // STEP 1: Pure fact gathering
+        // ========================================
+        const step1Response = await fetch("https://api.x.ai/v1/responses", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${grokApiKey}` },
+          body: JSON.stringify({
+            model: 'grok-4-1-fast-reasoning',
+            input: [{
+              role: 'user',
+              content: `Search the web RIGHT NOW using as many queries as needed for "${companyName}" and find ANY verifiable public signals of enterprise transformation (ERP, CRM, HCM, PLM, SCM, cloud migration, legacy system replacement) in the last 24 months.
 
 Search using ALL these strategies (do not skip any):
 1. Company name + keywords: "ERP" "HCM" "CRM" "Workday" "SAP" "S/4HANA" "Oracle Cloud" "Salesforce" "ServiceNow" "Dynamics 365" "migration" "implementation" "go-live" "cutover" "blueprint" "RFP" "vendor selection"
@@ -94,50 +128,43 @@ If after all searches you find ZERO verifiable public signals → write only:
 "NO VERIFIABLE PUBLIC SIGNALS FOUND IN LAST 24 MONTHS"
 
 Do NOT summarize. Do NOT invent. Do NOT stop early. Be exhaustive. Use all 100 sources if needed.`
-        }],
-        tools: [{
-          "type": "web_search"
-        }],  // Custom web_search tool (proxied by xAI)
-        tool_choice: 'required',  // Forces calls—no 0 sources
-        temperature: 0.0,
-        stream: false,
-        return_citations: true  // Citations in tool_calls
-      })
-    });
+            }],
+            tools: [{ "type": "web_search" }],
+            tool_choice: 'required',
+            temperature: 0.0,
+            stream: false,
+            return_citations: true
+          })
+        });
 
-    if (!step1Response.ok) throw new Error(`Grok Step 1 failed: ${await step1Response.text()}`);
+        if (!step1Response.ok) throw new Error(`Grok Step 1 failed: ${await step1Response.text()}`);
 
-    const step1Data = await step1Response.json();
-    console.log("Step 1 data: ", step1Data);
+        const step1Data = await step1Response.json();
+        console.log("Step 1 data came for " + companyName, step1Data);
 
-    // Extract content and citations correctly
-    const finalMessage = step1Data.output?.[step1Data.output.length - 1]?.content?.[0];
-    const rawEvidence = finalMessage?.text || 'NO VERIFIABLE SIGNALS FOUND';
-    const annotations = finalMessage?.annotations || [];
+        // Extract content and citations correctly
+        const finalMessage = step1Data.output?.[step1Data.output.length - 1]?.content?.[0];
+        const rawEvidence = finalMessage?.text || 'NO VERIFIABLE SIGNALS FOUND';
+        const annotations = finalMessage?.annotations || [];
 
-    // Extract all unique sources found
-    const allSources = annotations
-      .map((a: any) => ({
-        title: a.title || (a.url ? new URL(a.url).hostname : 'Source'),
-        url: a.url
-      }))
-      .filter((s: any) => s.url)
-      // Deduplicate by URL
-      .filter((s: any, index: number, self: any[]) =>
-        index === self.findIndex((t: any) => t.url === s.url)
-      );
+        const allSources = annotations
+          .map((a: any) => ({
+            title: a.url?.slice(8, 38) + '...' || 'Source',
+            url: a.url
+          }))
+          .filter((s: any) => s.url);
 
-    // ========================================
-    // STEP 2: Structured analysis using only real evidence
-    // ========================================
-    const step2Response = await fetch(grokApiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${grokApiKey}` },
-      body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',
-        messages: [
-          {
-            role: 'system', content: `You are a hedge fund analyst. Using ONLY the evidence below, produce a structured JSON analysis.
+        // ========================================
+        // STEP 2: Structured analysis
+        // ========================================
+        const step2Response = await fetch(grokApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${grokApiKey}` },
+          body: JSON.stringify({
+            model: 'grok-4-1-fast-reasoning',
+            messages: [
+              {
+                role: 'system', content: `You are a hedge fund analyst. Using ONLY the evidence below, produce a structured JSON analysis.
 
 Evidence:
 ${rawEvidence}
@@ -160,8 +187,8 @@ For public companies, include realistic past and future financial impacts based 
 - revenue impact for both case
 
 Return EXACTLY this JSON structure:` },
-          {
-            role: 'user', content: `{
+              {
+                role: 'user', content: `{
   "phase": "RFP/Planning" | "Ongoing Implementation" | "Completed/Stable" | "Unknown",
   "signalType": "ERP" | "CRM" | "HCM" | "PLM" | "ETL" | "Infrastructure" | "Other",
   "confidence": number 0–100,
@@ -173,78 +200,125 @@ Return EXACTLY this JSON structure:` },
   "sources": {title: string, url: string}[],
   "companyName": "${companyName}"
 }` }
-        ],
-        temperature: 0.1,
-        stream: false
-      })
+            ],
+            temperature: 0.1,
+            stream: false
+          })
+        });
+
+        if (!step2Response.ok) throw new Error(`Grok Step 2 failed`);
+
+        const step2Data = await step2Response.json();
+        let result: StrategicInsight;
+
+        console.log("Step 2 data came for " + companyName, step2Data);
+
+        try {
+          const content = step2Data.choices[0].message.content;
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          result = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+
+          result.pastImpacts = result.pastImpacts || [];
+          result.futureImpacts = result.futureImpacts || [];
+          result.evidence = result.evidence || rawEvidence.split('\n').filter(line => line.includes('QUOTE:'));
+          result.sources = result.sources?.length ? result.sources : allSources.slice(0, 5);
+          result.allSources = allSources;
+          result.companyName = companyName;
+
+        } catch (e) {
+          console.log("Parsing error for step 2, using default values", e);
+          result = {
+            phase: 'Unknown',
+            signalType: 'Other',
+            confidence: 10,
+            shareImpact: 'Unknown',
+            pastImpacts: [],
+            futureImpacts: [],
+            summary: 'No verifiable public transformation signals found in last 18 months.',
+            evidence: [rawEvidence],
+            sources: allSources.slice(0, 5),
+            allSources: allSources,
+            companyName
+          };
+        }
+
+        // Cache result
+        if (useCache) {
+          await cacheSearch(`strategic_analysis_${companyName}`, result, supabase, 24);
+        }
+
+        // Update DB record with completion
+        const dbupdate = await supabase
+          .from('grok_search_results')
+          .update({
+            phase: result.phase,
+            signal_type: result.signalType,
+            confidence: result.confidence,
+            share_impact: result.shareImpact,
+            past_impacts: result.pastImpacts,
+            future_impacts: result.futureImpacts,
+            summary: result.summary,
+            evidence: result.evidence,
+            sources: result.sources,
+            all_sources: result.allSources,
+            status: 'completed'
+          })
+          .eq('id', initialRecord.id)
+          .select('id,status')        // ← forces real response
+          .single();
+
+        // Critical: prevent early_drop from killing the connection
+        await new Promise(r => setTimeout(r, 400));
+
+        if (dbupdate.error) console.error('DB Update Error:', dbupdate.error);
+        console.log("DB Update Result: ", dbupdate);
+
+        await incrementGrokUsage(user.id, supabase);
+        console.log(`[Grok Search] Background analysis completed for: ${companyName}`);
+        console.log(initialRecord.id, " Result: ", result);
+
+      } catch (error) {
+        console.error('[Grok Search] Background task failed:', error);
+        await supabase
+          .from('grok_search_results')
+          .update({
+            status: 'failed',
+            summary: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          })
+          .eq('id', initialRecord.id);
+      }
+    };
+
+    // 3. Trigger background task
+    const backgroundPromise = backgroundTask().then(async () => {
+      console.log(`[Grok Search] Background task finished. Flushing logs...`);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for I/O
     });
 
-    if (!step2Response.ok) throw new Error(`Grok Step 2 failed`);
-
-    const step2Data = await step2Response.json();
-    console.log("Step 2 data: ", step2Data);
-    let result: StrategicInsight;
-
-    try {
-      const content = step2Data.choices[0].message.content;
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      result = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-
-      // Ensure arrays
-      result.pastImpacts = result.pastImpacts || [];
-      result.futureImpacts = result.futureImpacts || [];
-      result.evidence = result.evidence || rawEvidence.split('\n').filter(line => line.includes('QUOTE:'));
-      // Use verified sources from Step 2 if available, otherwise fallback to all sources
-      result.sources = result.sources?.length ? result.sources : allSources.slice(0, 5);
-      result.allSources = allSources;
-      result.companyName = companyName;
-
-    } catch (e) {
-      // Fallback with real sources
-      result = {
-        phase: 'Unknown',
-        signalType: 'Other',
-        confidence: 10,
-        shareImpact: 'Unknown',
-        pastImpacts: [],
-        futureImpacts: [],
-        summary: 'No verifiable public transformation signals found in last 18 months.',
-        evidence: [rawEvidence],
-        sources: allSources.slice(0, 5),
-        allSources: allSources,
-        companyName
-      };
+    // @ts-ignore
+    if (typeof EdgeRuntime !== 'undefined') {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(backgroundPromise);
+    } else {
+      // Fallback for local testing if EdgeRuntime is not available (though it should be)
+      // Note: In local 'supabase functions serve', EdgeRuntime might behave differently.
+      // We'll just let it run floating if waitUntil isn't there, but it usually is.
+      console.log('EdgeRuntime not detected, running background task without waitUntil');
+      backgroundPromise.catch(e => console.error('Background task error:', e));
     }
 
-    // Cache + DB insert (same as before)
-    if (useCache) {
-      await cacheSearch(`strategic_analysis_${companyName}`, result, supabase, 24);
-    }
-
-    await supabase.from('grok_search_results').insert({
-      user_id: user.id,
-      company_name: result.companyName,
-      phase: result.phase,
-      signal_type: result.signalType,
-      confidence: result.confidence,
-      share_impact: result.shareImpact,
-      past_impacts: result.pastImpacts,
-      future_impacts: result.futureImpacts,
-      summary: result.summary,
-      evidence: result.evidence,
-      sources: result.sources,
-      all_sources: result.allSources
-    });
-
-    await incrementGrokUsage(user.id, supabase);
-
-    return new Response(JSON.stringify({ success: true, data: result, fromCache: false }), {
+    // 4. Return immediate response
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Scanning started. This may take up to 5 minutes.',
+      id: initialRecord.id
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('[Grok Search] Error:', error);
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -260,9 +334,8 @@ async function incrementGrokUsage(userId: string, supabase: any) {
       p_date: today
     });
 
-    // If RPC doesn't exist (it wasn't in the migration file I saw earlier, but let's assume standard insert/update logic if RPC fails or just do direct DB manip)
     if (error) {
-      // Fallback to direct table manipulation as seen in previous version
+      // Fallback to direct table manipulation
       const { data: existing } = await supabase
         .from('grok_api_usage')
         .select('id, requests')
